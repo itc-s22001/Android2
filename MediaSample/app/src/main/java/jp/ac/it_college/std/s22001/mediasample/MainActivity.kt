@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
+import android.widget.CompoundButton
 import jp.ac.it_college.std.s22001.mediasample.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -26,6 +27,9 @@ class MainActivity : AppCompatActivity() {
             prepareAsync()
         }
         binding.btPlay.setOnClickListener(::onPlayButtonClick)
+        binding.btBack.setOnClickListener(::onBackButtonClick)
+        binding.btForward.setOnClickListener(::onForwardButtonClick)
+        binding.swLoop.setOnCheckedChangeListener(::onLoopSwitchChanged)
     }
     private fun mediaPlayerOnPrepared(mediaPlayer: MediaPlayer) {
         binding.btPlay.isEnabled = true
@@ -55,6 +59,21 @@ class MainActivity : AppCompatActivity() {
             release()
         }
         super.onStop()
+    }
+    private fun onBackButtonClick(view: View) {
+        mediaPlayer?.seekTo(0)
+    }
+    private fun onForwardButtonClick(view: View) {
+       mediaPlayer?.run {
+           seekTo(duration)
+           if(!isPlaying) {
+               binding.btPlay.setText(R.string.bt_play_pause)
+               start()
+           }
+       }
+    }
+    private fun onLoopSwitchChanged(buttonView: CompoundButton, isChecked: Boolean) {
+       mediaPlayer?.isLooping = isChecked
     }
 }
 
