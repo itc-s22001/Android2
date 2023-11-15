@@ -1,6 +1,6 @@
 package jp.ac.it_college.std.s22001.pokemonquiz
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,11 +17,15 @@ import androidx.compose.ui.unit.dp
 import jp.ac.it_college.std.s22001.pokemonquiz.ui.theme.PokemonQuizTheme
 
 @Composable
-fun SelectGenerationScene(modifier: Modifier = Modifier) {
+fun SelectGenerationScene(modifier: Modifier = Modifier, onGenerationSelected: (Int) -> Unit = {}) {
     Surface(modifier) {
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
             items(1) {
-                ItemGeneration(generation = 9, seriesName = "スカーレット/バイオレット")
+                Generation(
+                    generation = 9,
+                    seriesName = "スカーレット/バイオレット",
+                    onGenerationSelected = onGenerationSelected
+                )
             }
 
         }
@@ -29,12 +33,13 @@ fun SelectGenerationScene(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ItemGeneration(generation: Int, seriesName: String) {
+fun Generation(generation: Int, seriesName: String, onGenerationSelected: (Int) -> Unit = {}) {
     Surface(
         color = MaterialTheme.colorScheme.secondary,
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
+            .clickable { onGenerationSelected(generation) }
     ) {
         Column(
             modifier = Modifier
