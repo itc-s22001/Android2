@@ -87,7 +87,7 @@ fun PokeNavigation(
 fun generationQuizData(generation: Int): List<PokeQuiz> {
     return listOf(
         PokeQuiz(
-            imageUrl = "https://www.google.com/imgres?imgurl=https%3A%2F%2Fp16-sign-va.tiktokcdn.com%2Ftos-maliva-p-0068%2F8f221e8d1d0f4301a1f5807e594dbcfd_1698777116~tplv-photomode-zoomcover%3A720%3A720.jpeg%3Fx-expires%3D1699992000%26x-signature%3D39mmdg3Y2qWdlj%252FAgX25rJ9k4%252FQ%253D&tbnid=v3WMJLj7JFKu-M&vet=10CM0BEDMowgFqFwoTCJCU-L3BwoIDFQAAAAAdAAAAABAC..i&imgrefurl=https%3A%2F%2Fwww.tiktok.com%2Fdiscover%2F%25E8%25BB%25A2%25E3%2582%25B9%25E3%2583%25A9%25E3%2580%2580%25E3%2582%25AB%25E3%2583%25AC%25E3%2583%25A9&docid=IMcUAuOgDnfYEM&w=720&h=405&q=%E3%82%A2%E3%83%8B%E3%83%A1%E7%94%BB%E5%83%8F%E3%80%80%E3%82%AB%E3%83%AC%E3%83%A9&ved=0CM0BEDMowgFqFwoTCJCU-L3BwoIDFQAAAAAdAAAAABAC",
+            imageUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/906.png",
             choices = listOf("ニャオハ", "ホゲータ", "クワッス", "グルトン").shuffled(),
             correct = "ニャオハ"
         ),
