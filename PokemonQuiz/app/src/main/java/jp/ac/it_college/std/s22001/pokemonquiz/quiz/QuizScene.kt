@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,13 +35,18 @@ import coil.compose.AsyncImage
 import jp.ac.it_college.std.s22001.pokemonquiz.R
 import jp.ac.it_college.std.s22001.pokemonquiz.model.PokeQuiz
 import jp.ac.it_college.std.s22001.pokemonquiz.ui.theme.PokemonQuizTheme
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun QuizScene(
     quiz: PokeQuiz,
     modifier: Modifier = Modifier,
+    onFinished: (Boolean) -> Unit = {},
 ) {
     var state by remember { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
+
     Surface(modifier) {
         Column(
             modifier = Modifier.fillMaxWidth()
@@ -49,6 +55,11 @@ fun QuizScene(
             PokeNameList(quiz.choices, state == 0) {
                 // 正誤チェック
                 state = if (it == quiz.correct) 1 else -1
+                // 待機と終了
+                scope.launch {
+                    delay(2000)
+                    onFinished(state > 0)
+                }
             }
         }
     }
@@ -85,6 +96,7 @@ fun PokeImage(imageUrl: String, state: Int = 0) {
             Image(
                 painter = painterResource(id = R.drawable.maru),
                 contentDescription = "",
+                alpha = 0.25f,
                 modifier = Modifier.fillMaxSize()
             )
         }
