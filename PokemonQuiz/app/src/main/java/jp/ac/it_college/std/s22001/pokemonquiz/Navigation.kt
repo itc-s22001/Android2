@@ -1,5 +1,6 @@
 package jp.ac.it_college.std.s22001.pokemonquiz
 
+import android.content.Context
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -10,20 +11,25 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import jp.ac.it_college.std.s22001.pokemonquiz.database.PokeRoomDatabase
 import jp.ac.it_college.std.s22001.pokemonquiz.model.PokeQuiz
 import jp.ac.it_college.std.s22001.pokemonquiz.quiz.QuizScene
 import jp.ac.it_college.std.s22001.pokemonquiz.result.ResultScene
 import jp.ac.it_college.std.s22001.pokemonquiz.title.TitleScene
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 object Destinations {
     const val TITLE = "title"
@@ -39,8 +45,14 @@ fun PokeNavigation(
 ) {
     // AppBar の文言を保持するやつ
     var titleText by remember { mutableStateOf("") }
+    // クイズのデータ
     var quizData by remember { mutableStateOf(listOf<PokeQuiz>()) }
+    // スコア(正解数)
     var score by remember { mutableIntStateOf(0) }
+    // context
+    val context = LocalContext.current
+    // コルーチンスコープ
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         // 上部のバー
@@ -71,8 +83,10 @@ fun PokeNavigation(
                 score = 0
 
                 SelectGenerationScene(onGenerationSelected = { gen ->
-                    quizData = generationQuizData(gen)
-                    navController.navigate("quiz/0")
+                    scope.launch {
+                        quizData = generationQuizData(context, gen)
+                        navController.navigate("quiz/0")
+                    }
                 })
             }
             composable(
@@ -119,32 +133,29 @@ fun PokeNavigation(
     }
 }
 
-fun generationQuizData(generation: Int): List<PokeQuiz> {
-    return listOf(
-        PokeQuiz(
-            imageUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/906.png",
-            choices = listOf("ニャオハ", "ホゲータ", "クワッス", "グルトン").shuffled(),
-            correct = "ニャオハ"
-        ),
-        PokeQuiz(
-            imageUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/909.png",
-            choices = listOf("ニャオハ", "ホゲータ", "クワッス", "グルトン").shuffled(),
-            correct = "ホゲータ"
-        ),
-        PokeQuiz(
-            imageUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/912.png",
-            choices = listOf("ニャオハ", "ホゲータ", "クワッス", "グルトン").shuffled(),
-            correct = "クワッス"
-        ),
-        PokeQuiz(
-            imageUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/915.png",
-            choices = listOf("パモ", "ニャオハ", "ホゲータ", "クワッス", "グルトン").shuffled(),
-            correct = "グルトン"
-        ),
-        PokeQuiz(
-            imageUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1002.png",
-            choices = listOf("パオジオン", "ニャオハ", "ホゲータ", "クワッス", "グルトン").shuffled(),
-            correct = "パオジオン"
-        )
-    )
-}
+suspend fun generationQuizData(context: Context, generation: Int): List<PokeQuiz> =
+    withContext(Dispatchers.IO) {
+        // PokeDao の取得
+        val dao = PokeRoomDatabase.getDatabase(context).pokeDao()
+
+        // [generation] に応じてデータを取ってくる
+        val pokeData = dao.findByGeneration(generation)
+
+        // シャッフルして10件取り出す
+        val currentList = pokeData.shuffled().subList(0, 10)
+
+        return@withContext currentList.map { target ->
+            // 選択肢用のリストを作る(初期値は正解が１つのみ入っている)
+            val choices = mutableListOf<String>(target.name)
+            // 誤答の選択肢を３つ追加する
+            choices.addAll(
+                currentList.filter { it.id != target.id }.shuffled().subList(0, 3).map { it.name }
+            )
+            PokeQuiz(
+                target.mainTextureUrl,
+                choices.shuffled(), // ここで選択肢をシャッフルしている
+                target.name
+            )
+        }
+
+    }
