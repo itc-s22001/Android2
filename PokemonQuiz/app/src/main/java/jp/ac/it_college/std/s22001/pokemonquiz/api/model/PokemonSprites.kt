@@ -17,5 +17,5 @@ data class PokemonSpritesOther(
 @Serializable
 data class SpriteResources(
     @SerialName("front_default") val frontDefault: String,
-    @SerialName("front_shiny") val frontShiny: String,
+    @SerialName("front_shiny") val frontShiny: String?,
 )

@@ -7,6 +7,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -16,6 +17,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -23,19 +28,33 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import jp.ac.it_college.std.s22001.pokemonquiz.database.PokeRoomDatabase
+import jp.ac.it_college.std.s22001.pokemonquiz.download.DownloadScene
+import jp.ac.it_college.std.s22001.pokemonquiz.download.pokeDataDownload
 import jp.ac.it_college.std.s22001.pokemonquiz.model.PokeQuiz
 import jp.ac.it_college.std.s22001.pokemonquiz.quiz.QuizScene
 import jp.ac.it_college.std.s22001.pokemonquiz.result.ResultScene
 import jp.ac.it_college.std.s22001.pokemonquiz.title.TitleScene
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
+
+// Preferences DataStore を使えるようにする
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "pokeApi")
 
 object Destinations {
     const val TITLE = "title"
     const val GENERATION = "generation_select"
     const val QUIZ = "quiz/{order}"
     const val RESULT = "result"
+    const val DOWNLOAD = "data_download"
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,10 +90,24 @@ fun PokeNavigation(
                 titleText = ""
                 TitleScene(
                     onTitleClick = {
-                        navController.navigate(Destinations.GENERATION)
+                        if (isReadyData(context)) {
+                            navController.navigate(Destinations.GENERATION)
+                        } else {
+                            navController.navigate(Destinations.DOWNLOAD)
+                        }
                     }
                 )
             }
+
+            composable(Destinations.DOWNLOAD) {
+                DownloadScene()
+                LaunchedEffect(key1 = "download") {
+                    pokeDataDownload(context = context, scope = scope) {
+                        navController.navigate(Destinations.GENERATION)
+                    }
+                }
+            }
+
             composable(Destinations.GENERATION) {
                 // 世代選択画面
                 // AppBar のタイトル設定
@@ -133,6 +166,18 @@ fun PokeNavigation(
     }
 }
 
+fun isReadyData(context: Context): Boolean {
+    // 直近のデータ取得日を DataStore から取得する
+    val LAST_UPDATED_AT = stringPreferencesKey("last_updated_at")
+    val lastUpdateAtStringFlow: Flow<String> = context.dataStore.data
+        .map {
+            it[LAST_UPDATED_AT] ?: LocalDateTime.MIN.toString()
+        }
+    // LocalDateTime に変換
+    val lastUpdatedAt = runBlocking { LocalDateTime.parse(lastUpdateAtStringFlow.first()) }
+    return ChronoUnit.MONTHS.between(lastUpdatedAt, LocalDateTime.now()) == 0L
+}
+
 suspend fun generationQuizData(context: Context, generation: Int): List<PokeQuiz> =
     withContext(Dispatchers.IO) {
         // PokeDao の取得
@@ -149,7 +194,7 @@ suspend fun generationQuizData(context: Context, generation: Int): List<PokeQuiz
             val choices = mutableListOf<String>(target.name)
             // 誤答の選択肢を３つ追加する
             choices.addAll(
-                currentList.filter { it.id != target.id }.shuffled().subList(0, 3).map { it.name }
+                pokeData.filter { it.id != target.id }.shuffled().subList(0, 3).map { it.name }
             )
             PokeQuiz(
                 target.mainTextureUrl,
