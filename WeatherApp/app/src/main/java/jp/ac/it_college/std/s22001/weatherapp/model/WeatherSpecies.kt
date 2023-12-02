@@ -16,6 +16,7 @@ data class WeatherApiResource(
     val weather: List<SeasonResource>,
     val wind: Tempest,
 //    val snow: TimeResource,
+    val pop: Double,
     val dt_txt: String
 )
 

@@ -15,9 +15,9 @@ object ApiClient {
     private val ktor = HttpClient(CIO) {
         engine {
             endpoint {
-                connectTimeout = 5000
-                requestTimeout = 5000
-                socketTimeout = 5000
+                connectTimeout = 7000
+                requestTimeout = 7000
+                socketTimeout = 7000
             }
         }
         install(ContentNegotiation) {
@@ -32,3 +32,4 @@ object ApiClient {
     suspend fun get(endpoint : String) =
         ktor.get{ url("$BASE_URL$endpoint" )}
 }
+//https://api.openweathermap.org/img/w/13d.png
